@@ -21,7 +21,19 @@ app.get('/', function(req, res){
 app.get('/load', function(req, res){
   res.render('load');
 });
-
+// loading files
+var formidable = require('formidable');
+app.post('/load-file', function(req, res){
+  var form = new formidabl.IncomingForm();
+  form.parse(req, function(err, fields, files){
+    if(err) return res.redirect(303, '/error');
+    console.log('received fields:');
+    console.log(fields);
+    console.log('received files:');
+    console.log(files);
+    res.redirect(303, '/thank-you')
+  })
+});
 
 
 // 404
