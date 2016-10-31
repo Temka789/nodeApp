@@ -23,18 +23,38 @@ app.get('/load', function(req, res){
 });
 // loading files
 var formidable = require('formidable');
+var fileDir = __dirname + '/data';
+
+var fs = require('fs');
+fs.existsSync(fileDir) || fs.mkdirSync(fileDir);
 app.post('/load-file', function(req, res){
-  var form = new formidabl.IncomingForm();
+  var form = new formidable.IncomingForm();
   form.parse(req, function(err, fields, files){
-    if(err) return res.redirect(303, '/error');
-    console.log('received fields:');
-    console.log(fields);
-    console.log('received files:');
-    console.log(files);
+    if(err){
+      res.session.flash = {
+        type: 'danger',
+        intro: 'Ooops',
+        message: 'Error is occurred.'
+      };
+    }
+
+    var image = files.image;
+    var dir = fileDir + '/' + Date.now();
+    var path = dir + '/' + image.name;
+
+    console.log(fs.mkdirSync(dir));
+    fs.renameSync(image.path, dir + '/'+image.name);
+    return res.redirect(303, '/error');
+    // console.log('received fields:');
+    // console.log(fields);
+    // console.log('received files:');
+    // console.log(files);
     res.redirect(303, '/thank-you')
   })
 });
-
+app.get('/thank-you', function(req, res){
+  res.render('thank-you');
+});
 
 // 404
 app.use(function(req, res){
