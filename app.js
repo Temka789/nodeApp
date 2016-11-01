@@ -68,6 +68,15 @@ app.use(function(err, req, res, next){
   res.send('500');
 });
 
-app.listen(app.get('port'), function(){
-  console.log('Listening ' + app.get('port'));
-});
+function startServer(){
+  app.listen(app.get('port'), function(){
+    console.log('Listening ' + app.get('port'));
+  });
+}
+if(require.main === module){
+  // if started fron this file
+  startServer();
+}else{
+  // if started from cluster
+  module.exports = startServer;
+}
