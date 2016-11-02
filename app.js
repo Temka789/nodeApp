@@ -11,26 +11,26 @@ app.set('view engine', 'handlebars');
 app.use(function(req, res, next){
 // создаем домен для этого запроса
   var domain = require('domain').create();
-// обрабатываем ошибки на этом домене
+  // обрабатываем ошибки на этом домене
   domain.on('error', function(err){
     console.error('ПЕРЕХВАЧЕНА ОШИБКА ДОМЕНА\n', err.stack);
     try {
-// Отказобезопасный останов через 5 секунд
+      // Отказобезопасный останов через 5 секунд
       setTimeout(function(){
         console.error(' Отказобезопасный останов.');
         process.exit(1);
       }, 5000);
-// Отключение от кластера
+      // Отключение от кластера
       var worker = require('cluster').worker;
       if(worker) worker.disconnect();
-// Прекращение принятия новых запросов
+      // Прекращение принятия новых запросов
       server.close();
       try {
-// Попытка использовать маршрутизацию
-// ошибок Express
+        // Попытка использовать маршрутизацию
+        // ошибок Express
         next(err);
       } catch(err){
-// Если маршрутизация ошибок Express не сработала,
+        // Если маршрутизация ошибок Express не сработала,
         // пробуем выдать текстовый ответ Node
         console.error('Сбой механизма обработки ошибок ' +
           'Express .\n', err.stack);
@@ -63,12 +63,14 @@ app.get('/load', function(req, res){
 });
 // loading files
 var formidable = require('formidable');
-var fileDir = __dirname + '/data';
+var fileDir = __dirname + '/public/';
 
 var fs = require('fs');
 fs.existsSync(fileDir) || fs.mkdirSync(fileDir);
+
 app.post('/load-file', function(req, res){
   var form = new formidable.IncomingForm();
+
   form.parse(req, function(err, fields, files){
     if(err){
       res.session.flash = {
@@ -76,19 +78,25 @@ app.post('/load-file', function(req, res){
         intro: 'Ooops',
         message: 'Error is occurred.'
       };
+      return res.redirect(303, '/error');
     }
 
     var image = files.image;
-    var dir = fileDir + '/' + Date.now();
-    var path = dir + '/' + image.name;
+    var DirLoad = fileDir + '/userImages/';
+    // creating image upload directory
+    fs.existsSync(DirLoad) || fs.mkdirSync(DirLoad);
 
-    console.log(fs.mkdirSync(dir));
-    fs.renameSync(image.path, dir + '/'+image.name);
-    return res.redirect(303, '/error');
-    // console.log('received fields:');
-    // console.log(fields);
-    // console.log('received files:');
-    // console.log(files);
+    var pathN = require('path');
+    var path = DirLoad + '/' + Date.now() + pathN.extname(image.name);
+
+    var is = fs.createReadStream(image.path);
+    var os = fs.createWriteStream(path);
+    is.pipe(os);
+    is.on('end',function() {
+      fs.unlinkSync(image.path);
+    });
+
+
     res.redirect(303, '/thank-you')
   })
 });
