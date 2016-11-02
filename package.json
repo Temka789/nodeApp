@@ -9,7 +9,9 @@
   "author": "Ethan Brown",
   "license": "ISC",
   "dependencies": {
-    "fs": "0.0.1-security"
+    "express-session": "^1.14.2",
+    "fs": "0.0.1-security",
+    "mongoose": "^4.6.5"
   },
   "devDependencies": {}
 }

@@ -7,6 +7,31 @@ var handlebars = require('express-handlebars')
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
+app.use(require('express-session')({
+  resave: false,
+  saveUninitialized: false,
+  secret: credentials.cookieSecret
+}));
+
+// DB
+var mongoose = require('mongoose');
+var opts = {
+  server: {
+    socketOptions: {keepAlive: 1}
+  }
+};
+
+switch(app.get('env')) {
+  case 'development':
+    mongoose.connect('mongodb://localhost:27017/test', opts);
+    break;
+  case 'production':
+    mongoose.connect('mongodb://localhost:27017/test', opts);
+    break;
+  default:
+    throw new Error('Неизвестная среда выполнения: ' + app.get('env'));
+}
+
 
 app.use(function(req, res, next){
 // создаем домен для этого запроса
@@ -97,12 +122,65 @@ app.post('/load-file', function(req, res){
     });
 
 
-    res.redirect(303, '/thank-you')
+    res.redirect(303, '/thank-you');
   })
 });
-app.get('/thank-you', function(req, res){
-  res.render('thank-you');
+app.get('/registration', function(req, res){
+  res.render('registration');
 });
+app.get('/login', function(req, res){
+  res.render('login');
+});
+
+
+app.post('/register-user', function(req, res){
+  var form = new formidable.IncomingForm();
+
+  form.parse(req, function(err, fields, files) {
+    if (err) {
+      res.session.flash = {
+        type: 'danger',
+        intro: 'Ooops',
+        message: 'Error occurred.'
+      };
+      return res.redirect(303, '/error');
+    }
+    if(!fields.name || !fields.lastName || !fields.email || !files.pass1 || !files.pass2 ){
+      res.session.flash = {
+        type: 'danger',
+        intro: 'Ooops',
+        message: 'Error occurred.'
+      }
+      return res.redirect(303, '/registration');
+    }
+
+    if( files.pass1 != files.pass2 ) {
+      res.session.flash = {
+        type: 'danger',
+        intro: 'Ooops',
+        message: 'Error occurred.'
+      };
+      return res.redirect(303, '/registration');
+
+    }
+    var User = require('./models/vacation');
+    new User({
+      name: fields.name,
+      lastName: fields.lastName,
+      email: fields.email,
+      pass: files.pass1
+    }).save(function(err, product, numAffected){
+      if(err){
+        // if some error
+      }
+      if(numAffected === 1){
+        // inserteds
+      }
+    });
+  });
+  res.redirect(303, '/registration')
+});
+
 
 // 404
 app.use(function(req, res){
